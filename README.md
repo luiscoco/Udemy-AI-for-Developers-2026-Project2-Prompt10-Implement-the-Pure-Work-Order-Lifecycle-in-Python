@@ -1,4 +1,4 @@
-# Work order lifecycle
+# Implement the Pure Work-Order Lifecycle in Python
 
 [`apps/backend/app/domain/`](apps/backend/app/domain/) holds pure business rules. Code there
 has no FastAPI imports, no file or database access, and never raises `HTTPException`. It
