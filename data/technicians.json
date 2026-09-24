@@ -1,0 +1,7 @@
+[
+  { "id": "tech-001", "name": "Nora Vance", "specialty": "HVAC" },
+  { "id": "tech-002", "name": "Tomas Arlen", "specialty": "Electrical" },
+  { "id": "tech-003", "name": "Priya Holm", "specialty": "Mechanical" },
+  { "id": "tech-004", "name": "Diego Marest", "specialty": "CNC & Automation" },
+  { "id": "tech-005", "name": "Lena Okafor-Brandt", "specialty": "Lifts & Hoists" }
+]

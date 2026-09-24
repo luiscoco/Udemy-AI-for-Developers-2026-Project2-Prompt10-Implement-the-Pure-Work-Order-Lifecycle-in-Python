@@ -1,0 +1,55 @@
+{
+  "name": "equipment-maintenance-hub",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Polyglot monorepo: Angular 22 frontend, FastAPI backend, shared OpenAPI contract.",
+  "workspaces": [
+    "apps/frontend",
+    "packages/contract"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "setup": "npm install && npm run backend:sync",
+    "lint": "npm run lint:repo && npm run lint --workspaces --if-present && npm run backend:lint",
+    "lint:repo": "eslint eslint.config.mjs scripts",
+    "typecheck": "npm run typecheck --workspaces --if-present && npm run backend:typecheck",
+    "test": "npm run test --workspaces --if-present && npm run backend:test",
+    "build": "npm run build --workspaces --if-present && npm run backend:build",
+    "dev": "concurrently --names frontend,backend --prefix-colors cyan,magenta \"npm:frontend:dev\" \"npm:backend:dev\"",
+    "format": "npm run backend:format",
+    "contract:generate": "npm run contract:generate:ts && npm run contract:generate:py",
+    "contract:generate:ts": "npm run generate --workspace @equipment-maintenance-hub/contract",
+    "contract:generate:py": "uv run --directory apps/backend datamodel-codegen",
+    "verify:contract": "node scripts/verify-contract.mjs",
+    "verify": "npm run verify:contract && npm run lint && npm run typecheck && npm run test && npm run build",
+    "frontend:dev": "npm run dev --workspace @equipment-maintenance-hub/frontend",
+    "frontend:build": "npm run build --workspace @equipment-maintenance-hub/frontend",
+    "frontend:test": "npm run test --workspace @equipment-maintenance-hub/frontend",
+    "frontend:lint": "npm run lint --workspace @equipment-maintenance-hub/frontend",
+    "frontend:typecheck": "npm run typecheck --workspace @equipment-maintenance-hub/frontend",
+    "backend:sync": "uv sync --directory apps/backend",
+    "backend:dev": "uv run --directory apps/backend python -c \"print('TODO: start FastAPI dev server')\"",
+    "backend:lint": "uv run --directory apps/backend ruff check && uv run --directory apps/backend ruff format --check",
+    "backend:format": "uv run --directory apps/backend ruff check --fix && uv run --directory apps/backend ruff format",
+    "backend:typecheck": "uv run --directory apps/backend mypy",
+    "backend:test": "uv run --directory apps/backend pytest",
+    "backend:build": "uv build --directory apps/backend"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "angular-eslint": "^22.5.0",
+    "concurrently": "^10.0.5",
+    "eslint": "^10.11.0",
+    "globals": "^17.0.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.70.1"
+  },
+  "overrides": {
+    "openapi-typescript": {
+      "typescript": "$typescript"
+    }
+  }
+}

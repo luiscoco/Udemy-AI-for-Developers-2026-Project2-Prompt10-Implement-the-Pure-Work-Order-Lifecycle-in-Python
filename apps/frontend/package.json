@@ -1,0 +1,14 @@
+{
+  "name": "@equipment-maintenance-hub/frontend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Reserved for the Angular 22 + TypeScript application (not scaffolded yet).",
+  "scripts": {
+    "dev": "echo \"TODO: ng serve (Angular 22 not scaffolded yet)\"",
+    "build": "echo \"TODO: ng build (Angular 22 not scaffolded yet)\"",
+    "test": "echo \"TODO: ng test (Angular 22 not scaffolded yet)\"",
+    "lint": "eslint . --no-error-on-unmatched-pattern",
+    "typecheck": "echo \"TODO: tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.spec.json --noEmit (Angular 22 not scaffolded yet)\""
+  }
+}

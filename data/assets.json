@@ -1,0 +1,8 @@
+[
+  { "id": "asset-001", "tag": "HVAC-01", "name": "Rooftop Air Handling Unit", "location": "Building A - Roof" },
+  { "id": "asset-002", "tag": "PUMP-04", "name": "Chilled Water Circulation Pump", "location": "Building A - Plant Room B1" },
+  { "id": "asset-003", "tag": "CNC-02", "name": "5-Axis CNC Milling Center", "location": "Workshop 2 - Bay 3" },
+  { "id": "asset-004", "tag": "UPS-03", "name": "Server Room UPS 40 kVA", "location": "Building B - Server Room" },
+  { "id": "asset-005", "tag": "LIFT-01", "name": "Freight Elevator", "location": "Warehouse - North Core" },
+  { "id": "asset-006", "tag": "COMP-12", "name": "Rotary Screw Air Compressor", "location": "Workshop 1 - Utility Corner" }
+]

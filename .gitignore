@@ -1,0 +1,28 @@
+# --- Node / npm ---
+node_modules/
+npm-debug.log*
+
+# --- Build output ---
+dist/
+.angular/
+coverage/
+
+# --- Python / uv ---
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Local environment files ---
+.env
+.env.*
+!.env.example
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+
+# --- Contract drift guard temp output (scripts/verify-contract.mjs) ---
+.verify-contract-*/

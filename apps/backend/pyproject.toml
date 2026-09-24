@@ -1,0 +1,96 @@
+[project]
+name = "equipment-maintenance-hub-backend"
+version = "0.1.0"
+description = "FastAPI backend for Equipment Maintenance Hub (Pydantic v2 models generated from packages/contract/openapi.yaml)."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pydantic>=2.13.5",
+]
+
+[dependency-groups]
+dev = [
+    "datamodel-code-generator>=0.82.0",
+    "mypy>=2.3.1",
+    "pytest>=9.1.1",
+    "ruff>=0.16.8",
+]
+
+[build-system]
+requires = ["uv_build>=0.12,<0.13"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "app"
+# Flat layout: the package lives in apps/backend/app/ (no src/ directory).
+module-root = ""
+
+# --- Type checking -----------------------------------------------------------
+[tool.mypy]
+python_version = "3.13"
+mypy_path = "."
+# app/generated/ is included on purpose: generated code is still type-checked.
+files = ["app", "tests"]
+strict = true
+plugins = ["pydantic.mypy"]
+# Beyond `strict`: flag dead branches and leftover ignores.
+warn_unreachable = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool", "possibly-undefined"]
+
+# --- Linting & formatting ----------------------------------------------------
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+src = [".", "tests"]
+# Generated from the OpenAPI contract: verified by regeneration (`verify:contract`),
+# not by manual lint review. Style fixes belong in the generator config below.
+extend-exclude = ["app/generated"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "B",        # bugbear
+    "UP",       # pyupgrade (modern syntax for py313)
+    "SIM",      # simplify
+    "ANN",      # explicit annotations, incl. return types on public functions
+    "RUF",      # ruff-specific
+    "FAST",     # FastAPI-specific
+]
+
+[tool.ruff.format]
+quote-style = "double"
+docstring-code-format = true
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+# --- Tests -------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--strict-markers", "--strict-config"]
+
+# --- Contract model generation -----------------------------------------------
+# Run from apps/backend: `uv run datamodel-codegen`. Never edit the output by hand.
+# Deterministic output: no timestamp (disable-timestamp) and a fixed formatter chain
+# (ruff, pinned by uv.lock) instead of the default black + isort.
+[tool.datamodel-codegen]
+input = "../../packages/contract/openapi.yaml"
+input-file-type = "openapi"
+output = "app/generated/contract_models.py"
+output-model-type = "pydantic_v2.BaseModel"
+target-python-version = "3.13"
+use-standard-collections = true
+use-union-operator = true
+use-annotated = true
+field-constraints = true
+enum-field-as-literal = "one"
+disable-timestamp = true
+custom-file-header = """\
+# GENERATED CODE - DO NOT EDIT. Source: packages/contract/openapi.yaml (datamodel-codegen).
+# Regenerate: `npm run contract:generate:py` (root) or `uv run datamodel-codegen` (apps/backend).
+"""
+formatters = ["ruff-format", "ruff-check"]

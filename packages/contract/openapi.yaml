@@ -1,0 +1,406 @@
+openapi: 3.1.0
+info:
+  title: Equipment Maintenance Hub API
+  version: 0.1.0
+  description: Shared contract. TypeScript and Pydantic v2 models are generated from this file.
+paths:
+  /api/health:
+    get:
+      operationId: getHealth
+      summary: Service health check
+      tags: [health]
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /api/assets:
+    get:
+      operationId: listAssets
+      summary: List all assets
+      tags: [assets]
+      responses:
+        "200":
+          description: All registered assets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Asset"
+
+  /api/technicians:
+    get:
+      operationId: listTechnicians
+      summary: List all technicians
+      tags: [technicians]
+      responses:
+        "200":
+          description: All registered technicians
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Technician"
+
+  /api/work-orders:
+    get:
+      operationId: listWorkOrders
+      summary: List work orders, optionally filtered by state and priority
+      tags: [work-orders]
+      parameters:
+        - name: state
+          in: query
+          required: false
+          description: Only return work orders in this state.
+          schema:
+            $ref: "#/components/schemas/WorkOrderState"
+        - name: priority
+          in: query
+          required: false
+          description: Only return work orders with this priority.
+          schema:
+            $ref: "#/components/schemas/Priority"
+      responses:
+        "200":
+          description: Work orders matching every supplied filter
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkOrder"
+        "400":
+          description: A filter value is not a valid state or priority
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    post:
+      operationId: createWorkOrder
+      summary: Report a new work order
+      description: >-
+        Creates a work order in state `reported`, unassigned. The server assigns
+        `id`, `reference`, `reportedAt` and `updatedAt`.
+      tags: [work-orders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewWorkOrder"
+      responses:
+        "201":
+          description: Work order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkOrder"
+        "400":
+          description: The payload is invalid or `assetId` does not reference an existing asset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /api/work-orders/{id}:
+    parameters:
+      - $ref: "#/components/parameters/WorkOrderId"
+    get:
+      operationId: getWorkOrder
+      summary: Get a work order by id
+      tags: [work-orders]
+      responses:
+        "200":
+          description: The work order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkOrder"
+        "404":
+          description: No work order with this id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /api/work-orders/{id}/assignment:
+    parameters:
+      - $ref: "#/components/parameters/WorkOrderId"
+    post:
+      operationId: assignWorkOrder
+      summary: Assign a technician to a work order
+      description: Replaces any existing assignment. Not allowed once the work order is in a final state.
+      tags: [work-orders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignmentCommand"
+      responses:
+        "200":
+          description: The updated work order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkOrder"
+        "404":
+          description: No work order with this id, or no technician with `technicianId`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409":
+          description: The work order is in a final state (`completed` or `cancelled`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /api/work-orders/{id}/transitions:
+    parameters:
+      - $ref: "#/components/parameters/WorkOrderId"
+    post:
+      operationId: transitionWorkOrder
+      summary: Apply a lifecycle transition to a work order
+      tags: [work-orders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransitionCommand"
+      responses:
+        "200":
+          description: The updated work order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkOrder"
+        "400":
+          description: The payload is invalid or `action` is not a known action
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: No work order with this id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409":
+          description: The action is not allowed from the work order's current state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /api/dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      summary: Aggregate work order counts for the dashboard
+      tags: [dashboard]
+      responses:
+        "200":
+          description: Current dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+components:
+  parameters:
+    WorkOrderId:
+      name: id
+      in: path
+      required: true
+      description: Work order id.
+      schema:
+        type: string
+        minLength: 1
+
+  schemas:
+    HealthStatus:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+
+    # --- Work order domain ---------------------------------------------------
+    # Lifecycle (enforced by the backend, not expressible in the schema):
+    #   reported --triage--> triaged --schedule--> scheduled --start--> in_progress --complete--> completed
+    #   triaged --cancel--> cancelled, scheduled --cancel--> cancelled
+    # completed and cancelled are final states.
+    WorkOrderState:
+      type: string
+      description: Lifecycle state of a work order. `completed` and `cancelled` are final.
+      enum: [reported, triaged, scheduled, in_progress, completed, cancelled]
+
+    WorkOrderAction:
+      type: string
+      description: >-
+        Lifecycle transition. triage: reported→triaged; schedule: triaged→scheduled;
+        start: scheduled→in_progress; complete: in_progress→completed;
+        cancel: triaged|scheduled→cancelled.
+      enum: [triage, schedule, start, complete, cancel]
+
+    Priority:
+      type: string
+      enum: [low, medium, high, critical]
+
+    Asset:
+      type: object
+      required: [id, tag, name, location]
+      properties:
+        id:
+          type: string
+          minLength: 1
+        tag:
+          type: string
+          minLength: 1
+          description: Human-readable asset tag (e.g. a plate or inventory code).
+        name:
+          type: string
+          minLength: 1
+        location:
+          type: string
+          minLength: 1
+
+    Technician:
+      type: object
+      required: [id, name, specialty]
+      properties:
+        id:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+        specialty:
+          type: string
+          minLength: 1
+
+    WorkOrder:
+      type: object
+      required:
+        [id, reference, assetId, title, description, priority, state, technicianId, reportedAt, updatedAt]
+      properties:
+        id:
+          type: string
+          minLength: 1
+        reference:
+          type: string
+          minLength: 1
+          description: Human-readable work order reference, assigned by the server.
+        assetId:
+          type: string
+          minLength: 1
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        priority:
+          $ref: "#/components/schemas/Priority"
+        state:
+          $ref: "#/components/schemas/WorkOrderState"
+        technicianId:
+          type: [string, "null"]
+          minLength: 1
+          description: Assigned technician, or null while unassigned. Always present.
+        reportedAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    NewWorkOrder:
+      type: object
+      required: [assetId, title, description, priority]
+      properties:
+        assetId:
+          type: string
+          minLength: 1
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        priority:
+          $ref: "#/components/schemas/Priority"
+
+    TransitionCommand:
+      type: object
+      required: [action]
+      properties:
+        action:
+          $ref: "#/components/schemas/WorkOrderAction"
+
+    AssignmentCommand:
+      type: object
+      required: [technicianId]
+      properties:
+        technicianId:
+          type: string
+          minLength: 1
+
+    DashboardSummary:
+      type: object
+      required: [totalOpen, criticalOpen, unassigned, byState]
+      properties:
+        totalOpen:
+          type: integer
+          minimum: 0
+          description: Work orders not in a final state (completed or cancelled).
+        criticalOpen:
+          type: integer
+          minimum: 0
+          description: Open work orders with priority `critical`.
+        unassigned:
+          type: integer
+          minimum: 0
+          description: Open work orders with no technician assigned.
+        byState:
+          type: object
+          description: Count of work orders per state. Every state is always present.
+          required: [reported, triaged, scheduled, in_progress, completed, cancelled]
+          additionalProperties: false
+          properties:
+            reported:
+              type: integer
+              minimum: 0
+            triaged:
+              type: integer
+              minimum: 0
+            scheduled:
+              type: integer
+              minimum: 0
+            in_progress:
+              type: integer
+              minimum: 0
+            completed:
+              type: integer
+              minimum: 0
+            cancelled:
+              type: integer
+              minimum: 0
+
+    ApiError:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          minLength: 1
+        details:
+          type: object
+          description: Optional structured context about the error (e.g. field errors).
+          additionalProperties: true

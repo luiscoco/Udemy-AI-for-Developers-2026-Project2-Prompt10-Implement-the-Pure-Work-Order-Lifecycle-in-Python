@@ -1,0 +1,29 @@
+{
+  "name": "@equipment-maintenance-hub/contract",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Single source of truth: OpenAPI spec, generated TypeScript models and runtime enum values.",
+  "types": "./src/index.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "files": [
+    "openapi.yaml",
+    "src"
+  ],
+  "scripts": {
+    "generate": "openapi-typescript openapi.yaml --output src/types.gen.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0",
+    "vitest": "^5.0.1"
+  }
+}
